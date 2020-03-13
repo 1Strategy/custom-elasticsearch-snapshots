@@ -1,8 +1,11 @@
 # Created by .ignore support plugin (hsz.mobi)
 ### AWS CFn
-deploy/*.yaml
+deploy/*
+deploy/!.gitkeep
 parameters/us-west-2/*
-tags/*.json
+parameters/us-west-2/!.gitkeep
+tags/*
+tags/!.gitkeep
 deploy.sh
 .idea/
 
