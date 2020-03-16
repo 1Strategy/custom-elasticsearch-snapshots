@@ -6,8 +6,7 @@ parameters/us-west-2/*
 parameters/us-west-2/!.gitkeep
 tags/*
 tags/!.gitkeep
-templates/*
-!templates/functions/function_dependencies/http_requests/python/.gitkeep
+templates/functions/function_dependencies/http_requests/python/*
 deploy.sh
 .idea/
 requirements.txt
