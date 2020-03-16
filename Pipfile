@@ -11,7 +11,6 @@ elasticsearch = "*"
 requests-aws4auth = "*"
 crhelper = "*"
 boto3 = "*"
-botostubs = "*"
 
 [requires]
-python_version = "3.7"
+python_version = "3.8"
