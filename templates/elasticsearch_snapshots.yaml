@@ -227,27 +227,6 @@ Resources:
               - s3:DeleteObject
             Resource: !Sub "${ElasticsearchSnapshotBucket.Arn}/*"
 
-#  ElasticsearchDomainCreateSnapshotPolicy:  # TODO: May not need this
-#    Type: AWS::IAM::Policy
-#    Properties:
-#      Roles:
-#        - !Ref ElasticsearchDomainRole
-#      PolicyName: !Sub "${AWS::StackName}-create-elasticsearch-snapshot-policy"
-#      PolicyDocument:
-#        Version: 2012-10-17
-#        Statement:
-#          - Sid: IamRolePermissions
-#            Effect: Allow
-#            Action:
-#              - iam:GetRole
-#              - iam:PassRole
-#            Resource: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/*"  # TODO: Specify Roles
-#          - Sid: EsDomainHttpPermissions
-#            Effect: Allow
-#            Action:
-#              - es:ESHttp*
-#            Resource: !Sub "arn:${AWS::Partition}:es:${AWS::Region}:${AWS::AccountId}:domain/${DomainName}"
-
   UpdateDomainConfigFunctionsPolicy:
     Type: AWS::IAM::Policy
     Properties:
@@ -264,8 +243,13 @@ Resources:
               - es:DescribeElasticsearchDomainConfig
               - es:UpdateElasticsearchDomainConfig
             Resource: !Sub "arn:${AWS::Partition}:es:${AWS::Region}:${AWS::AccountId}:domain/${DomainName}"
+          - Sid: VpcSecurityGroupDescribePermissions
+            Effect: Allow
+            Action:
+              - ec2:DescribeSecurityGroups
+            Resource: "*"
 
-  CreateSnapshotRepoFunctionPolicy:  # TODO: Need to create another Repo policy for UsesVpc
+  CreateSnapshotRepoFunctionPolicy:
     Type: AWS::IAM::Policy
     Properties:
       Roles:
@@ -303,70 +287,13 @@ Resources:
             Resource: !Sub "arn:${AWS::Partition}:es:${AWS::Region}:${AWS::AccountId}:domain/${DomainName}"
 
 
-#  CreateSnapshotRepoFunctionPolicy:  # NOTE: OLD OLD OLD!!!!!
-#    Type: AWS::IAM::Policy
-#    Properties:
-#      Roles:
-#        - !Ref CreateSnapshotRepoFunctionRole
-#      PolicyName: !Sub "${AWS::StackName}-elasticsearch-snapshot-repo-policy"
-#      PolicyDocument:
-#        Version: 2012-10-17
-#        Statement:
-##          - Sid: IamRolePermissions
-##            Effect: Allow
-##            Action:
-##              - iam:GetRole
-##              - iam:PassRole
-##            Resource:
-##              - !GetAtt ElasticsearchDomainRole.Arn  # NOTE: Might need to add more roles here?
-#          - Sid: EsDomainPermissions
-#            Effect: Allow
-#            Action:
-#              - es:Http*
-#            Resource: !Sub "arn:${AWS::Partition}:es:${AWS::Region}:${AWS::AccountId}:domain/${DomainName}"
-#          - Sid: VpcSecurityGroupWritePermissions  # TODO: VPC ONLY Policy
-#            Effect: Allow
-#            Action:
-#              - ec2:AuthorizeSecurityGroupIngress
-#              - ec2:AuthorizeSecurityGroupEgress
-#              - ec2:RevokeSecurityGroupIngress
-#              - ec2:RevokeSecurityGroupEgress
-#            Resource: !Sub "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:security-group/${ElasticsearchDomainSecurityGroupId}"
-#          - Sid: VpcSecurityGroupDescribePermissions  # TODO: VPC ONLY Policy
-#            Effect: Allow
-#            Action:
-#              - ec2:DescribeSecurityGroups
-#            Resource: "*"
-#          - Sid: LambdaExecutionPermissions
-#            Effect: Allow
-#            Action:
-#              - lambda:AddPermission
-#              - lambda:RemovePermission
-#            Resource:
-#              - !GetAtt UpdateDomainAccessPolicyFunction.Arn
-##              - !GetAtt CreateSnapshotRepoFunction.Arn
-##              - !GetAtt ElasticsearchSnapshotFunction.Arn
-##              - !If [UsesVpc, !GetAtt UpdateDomainSecurityGroupFunction.Arn, !Ref "AWS::NoValue"]
-#          - Sid: EventRulePermissions
-#            Effect: Allow
-#            Action:
-#              - events:PutRule
-#              - events:DeleteRule
-#              - events:PutTargets
-#              - events:RemoveTargets
-#            Resource: "*"
-##            Resource: !GetAtt ElasticsearchSnapshotRule.Arn
-
-
 #############################################
 # SNAPSHOT BUCKET (Please configure...)
 #############################################
   ElasticsearchSnapshotBucket:
     Type: AWS::S3::Bucket  # TODO: Update the bucket props (Access and Lifecycle policies)
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
-#    DeletionPolicy: Retain  # TODO: Change to this for snapshot retention
-#    UpdateReplacePolicy: Retain  # TODO: Change to this for snapshot retention
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     # Properties:
 
 #############################################
@@ -396,7 +323,6 @@ Resources:
 
 #############################################
 # UPDATE ES DOMAIN ACCESS POLICY
-# Provides Lambda Roles with access to the Domain
 #############################################
   UpdateDomainAccessPolicy:
     Type: Custom::UpdateDomainAccessPolicy

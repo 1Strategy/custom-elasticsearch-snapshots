@@ -1,18 +1,17 @@
 """
+Elasticsearch Domain Access Policy Updates Lambda
+
+Executes Elasticsearch Domain Access Policy updates to allow AWS services permissions to the domain
 """
 from botocore.exceptions import ClientError
 from crhelper import CfnResource
 import logging
 import boto3
 import json
-
-try:
-    import botostubs
-except ModuleNotFoundError:
-    pass
+import os
 
 
-helper = CfnResource(json_logging=False, log_level='DEBUG', boto_level='CRITICAL')
+helper = CfnResource(json_logging=False, log_level='INFO', boto_level='CRITICAL')
 
 
 def handler(event: dict, context: dict) -> None:
@@ -37,10 +36,9 @@ def create(event: dict, _) -> None:
     """
     """
     logger: logging.Logger = log('ACCESS POLICY UPDATES CREATE HANDLER')
-    es = boto3.client('es')  # type: botostubs.ElasticsearchService
-    config = es.describe_elasticsearch_domain_config(DomainName=event['ResourceProperties']['DomainName'])  # type: botostubs.ElasticsearchService.describe_elasticsearch_domain_config
+    es = boto3.client('es')
+    config = es.describe_elasticsearch_domain_config(DomainName=event['ResourceProperties']['DomainName'])
     policy: dict = json.loads(config['DomainConfig']['AccessPolicies']['Options'])
-    region = event['ServiceToken'].split(':')[3]
     account_id = event['ServiceToken'].split(':')[4]
 
     snapshot_role_policy: dict = {
@@ -49,7 +47,7 @@ def create(event: dict, _) -> None:
             'AWS': event['ResourceProperties']['CreateSnapshotFunctionRoleArn']
         },
         'Action': 'es:ESHttp*',
-        'Resource': f'arn:aws:es:{region}:{account_id}:domain/{event["ResourceProperties"]["DomainName"]}/*',
+        'Resource': f'arn:aws:es:{os.getenv("AWS_REGION")}:{account_id}:domain/{event["ResourceProperties"]["DomainName"]}/*',
     }
 
     snapshot_repo_role_policy: dict = {
@@ -58,7 +56,7 @@ def create(event: dict, _) -> None:
             'AWS': event['ResourceProperties']['CreateSnapshotRepoFunctionRoleArn']
         },
         'Action': 'es:ESHttp*',
-        'Resource': f'arn:aws:es:{region}:{account_id}:domain/{event["ResourceProperties"]["DomainName"]}/*',
+        'Resource': f'arn:aws:es:{os.getenv("AWS_REGION")}:{account_id}:domain/{event["ResourceProperties"]["DomainName"]}/*',
     }
 
     policy['Statement'].append(snapshot_role_policy)

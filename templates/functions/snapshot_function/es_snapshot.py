@@ -1,8 +1,9 @@
 """
 Elasticsearch Snapshot Lambda
 
-Executes Elasticsearch Domain Snapshots on a frequency that differs from the daily default provided by AWS Elasticsearch
+Executes Elasticsearch Domain Snapshots on customizable schedule, differing from the provided snapshots by AWS Elasticsearch Service
 """
+from elasticsearch.exceptions import ConnectionError, ConnectionTimeout
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 from datetime import datetime as dt
@@ -11,25 +12,31 @@ import boto3
 import os
 
 
-def handler(event: dict, context: dict) -> None:
+def handler(event: dict, _) -> None:
     """AWS Lambda function handler - Elasticsearch Domain Snapshot function
 
     :type: dict
     :param: event: aws cloudwatch schedule event
 
     :type: dict
-    :param: context: aws lambda function environment context
+    :param: _: (Unused) aws lambda function environment context
 
-    :rtype: dict
+    :rtype: None
     """
-    logger: logging.Logger = log('MULESOFT SNAPSHOT HANDLER')
+    logger: logging.Logger = log('ELASTICSEARCH SNAPSHOT HANDLER')
     logger.info(f'EVENT: {event}')
 
     repo_name: str = os.getenv('REPO_NAME')
-    credentials = boto3.Session().get_credentials()
-    awsauth = AWS4Auth(credentials.access_key, credentials.secret_key, event['region'], 'es', session_token=credentials.token)
-
     es_host: str = os.getenv('ES_HOST')
+
+    credentials = boto3.Session().get_credentials()
+    awsauth = AWS4Auth(
+        credentials.access_key,
+        credentials.secret_key,
+        os.getenv('AWS_REGION'),
+        'es',
+        session_token=credentials.token
+    )
     snapshot_name: str = str(dt.utcnow()).replace(' ', '-').replace(':', '-').split('.')[0]
 
     es = Elasticsearch(
@@ -40,17 +47,13 @@ def handler(event: dict, context: dict) -> None:
         connection_class=RequestsHttpConnection
     )
 
-    logger.info(f'ES INSTANCE: {es.ping()}')
+    logger.info(f'ES INSTANCE CONNECTION ACTIVE: {es.ping()}')
 
-    response = es.snapshot.create(repository=repo_name, snapshot=snapshot_name)
-    # try:
-    #     response = es.snapshot.create(repository=repo_name, snapshot=snapshot_name)
-    #     logger.info(f'Response: {response}')
-    # except Exception as e:
-    #     logger.error(e)
-    #     return
-
-    logger.info(f'Response: {response}')
+    try:
+        response = es.snapshot.create(repository=repo_name, snapshot=snapshot_name)
+        logger.info(f'RESPONSE: {response}')
+    except (ConnectionError, ConnectionTimeout) as e:
+        logger.error(e)
 
 
 def log(name='aws_entity', logging_level=logging.INFO) -> logging.Logger:

@@ -1,7 +1,7 @@
 """
 Elasticsearch Domain Security Group Updates Lambda
 
-Executes Elasticsearch Domain Security Group Updates to allow ingress from Kinesis Firehose
+Executes Elasticsearch Domain Security Group Updates to allow ingress from VPC-based Lambdas
 """
 from botocore.exceptions import ClientError
 from crhelper import CfnResource
@@ -9,7 +9,7 @@ import logging
 import boto3
 
 
-helper = CfnResource(json_logging=False, log_level='DEBUG', boto_level='CRITICAL')
+helper = CfnResource(json_logging=False, log_level='INFO', boto_level='CRITICAL')
 
 
 def handler(event: dict, context: dict) -> None:
@@ -33,7 +33,8 @@ def handler(event: dict, context: dict) -> None:
 def create(event, context):
     logger: logging.Logger = log('SECURITY GROUP UPDATES CREATE HANDLER')
     ec2 = boto3.resource('ec2')
-    domain_sg = ec2.SecurityGroup(event['ResourceProperties']['ElasticSearchSecurityGroupId'])
+    domain_sg = ec2.SecurityGroup(event['ResourceProperties']['DomainSecurityGroupId'])
+
     try:
         domain_sg.authorize_ingress(
             IpPermissions=[
@@ -43,7 +44,7 @@ def create(event, context):
                     'ToPort': 443,
                     'UserIdGroupPairs': [
                         {
-                            'GroupId': event['ResourceProperties']['TransformationLambdaSecurityGroup']
+                            'GroupId': event['ResourceProperties']['SnapshotFunctionSecurityGroupId']
                         }
                     ]
                 }
@@ -58,7 +59,7 @@ def create(event, context):
 def delete(event, context):
     logger: logging.Logger = log('SECURITY GROUP UPDATES DELETE HANDLER')
     ec2 = boto3.resource('ec2')
-    domain_sg = ec2.SecurityGroup(event['ResourceProperties']['ElasticSearchSecurityGroupId'])
+    domain_sg = ec2.SecurityGroup(event['ResourceProperties']['DomainSecurityGroupId'])
     try:
         domain_sg.revoke_ingress(
             IpPermissions=[
@@ -68,7 +69,7 @@ def delete(event, context):
                     'ToPort': 443,
                     'UserIdGroupPairs': [
                         {
-                            'GroupId': event['ResourceProperties']['TransformationLambdaSecurityGroup']
+                            'GroupId': event['ResourceProperties']['SnapshotFunctionSecurityGroupId']
                         }
                     ]
                 }
