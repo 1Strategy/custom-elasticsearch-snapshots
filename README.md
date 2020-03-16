@@ -5,7 +5,7 @@ pipenv run pip freeze > requirements.txt
 pip install -r requirements.txt -t ./templates/functions/function_dependencies/http_requests/python/.
 ```
 3. Add the following parameters to a `sandbox.json` file in `./parameters/us-west-2/sandbox.json`:
-```json
+```
 [
   "IsElasticsearchInVpc=false",
   "SubnetIds=subnet-0f43889c0dab70fdc",
