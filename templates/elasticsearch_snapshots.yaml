@@ -329,8 +329,11 @@ Resources:
     Properties:
       ServiceToken: !GetAtt UpdateDomainAccessPolicyFunction.Arn
       DomainName: !Ref DomainName
-      CreateSnapshotFunctionRoleArn: !GetAtt CreateSnapshotFunctionRole.Arn
-      CreateSnapshotRepoFunctionRoleArn: !GetAtt CreateSnapshotRepoFunctionRole.Arn
+      RoleArns:
+        - !GetAtt CreateSnapshotFunctionRole.Arn
+        - !GetAtt CreateSnapshotRepoFunctionRole.Arn
+#      CreateSnapshotFunctionRoleArn: !GetAtt CreateSnapshotFunctionRole.A
+#      CreateSnapshotRepoFunctionRoleArn: !GetAtt CreateSnapshotRepoFunctionRole.Arn
 
   UpdateDomainAccessPolicyFunction:
     Type: AWS::Serverless::Function
@@ -412,45 +415,45 @@ Resources:
 #############################################
 # SCHEDULE & CREATE SNAPSHOTS
 #############################################
-  ElasticsearchSnapshotFunction:
-    Type: AWS::Serverless::Function
-    DependsOn:
-      - CreateSnapshotFunctionPolicy
-      - CreateSnapshotRepo
-    Properties:
-      Handler: "functions/snapshot_function/es_snapshot.handler"
-      Runtime: python3.7
-      Role: !GetAtt CreateSnapshotFunctionRole.Arn
-      Timeout: 900
-      VpcConfig:
-        Fn::If:
-          - UsesVpc
-          - SecurityGroupIds:
-              - !Ref SnapshotFunctionSecurityGroup
-            SubnetIds: !Ref SubnetIds
-          - !Ref "AWS::NoValue"
-      Layers:
-        - !Ref FunctionDependencyLayer
-      Environment:
-        Variables:
-          ES_HOST: !Ref ElasticsearchDomainUrl
-          REPO_NAME: !Ref SnapshotRepoName
-
-  ElasticsearchSnapshotRule:
-    Type: AWS::Events::Rule
-    Properties:
-      Description: Event Schedule for triggering frequest snapshots of Elasticsearch Domain
-      ScheduleExpression: !Ref SnapshotScheduleExpression
-      State: ENABLED
-      Targets:
-        - Arn: !GetAtt ElasticsearchSnapshotFunction.Arn
-          Id: elasticsearch-snapshot-rule-target
-
-  ElasticsearchSnapshotRulePermissions:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !Ref ElasticsearchSnapshotFunction
-      Action:  lambda:InvokeFunction
-      Principal:  events.amazonaws.com
-      SourceArn: !GetAtt ElasticsearchSnapshotRule.Arn
+#  ElasticsearchSnapshotFunction:
+#    Type: AWS::Serverless::Function
+#    DependsOn:
+#      - CreateSnapshotFunctionPolicy
+#      - CreateSnapshotRepo
+#    Properties:
+#      Handler: "functions/snapshot_function/es_snapshot.handler"
+#      Runtime: python3.7
+#      Role: !GetAtt CreateSnapshotFunctionRole.Arn
+#      Timeout: 900
+#      VpcConfig:
+#        Fn::If:
+#          - UsesVpc
+#          - SecurityGroupIds:
+#              - !Ref SnapshotFunctionSecurityGroup
+#            SubnetIds: !Ref SubnetIds
+#          - !Ref "AWS::NoValue"
+#      Layers:
+#        - !Ref FunctionDependencyLayer
+#      Environment:
+#        Variables:
+#          ES_HOST: !Ref ElasticsearchDomainUrl
+#          REPO_NAME: !Ref SnapshotRepoName
+#
+#  ElasticsearchSnapshotRule:
+#    Type: AWS::Events::Rule
+#    Properties:
+#      Description: Event Schedule for triggering frequest snapshots of Elasticsearch Domain
+#      ScheduleExpression: !Ref SnapshotScheduleExpression
+#      State: ENABLED
+#      Targets:
+#        - Arn: !GetAtt ElasticsearchSnapshotFunction.Arn
+#          Id: elasticsearch-snapshot-rule-target
+#
+#  ElasticsearchSnapshotRulePermissions:
+#    Type: AWS::Lambda::Permission
+#    Properties:
+#      FunctionName: !Ref ElasticsearchSnapshotFunction
+#      Action:  lambda:InvokeFunction
+#      Principal:  events.amazonaws.com
+#      SourceArn: !GetAtt ElasticsearchSnapshotRule.Arn
 

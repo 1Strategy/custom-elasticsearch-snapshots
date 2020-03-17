@@ -1,5 +1,4 @@
-"""
-Elasticsearch Domain Security Group Updates Lambda
+"""Elasticsearch Domain Security Group Updates Lambda
 
 Executes Elasticsearch Domain Security Group Updates to allow ingress from VPC-based Lambdas
 """
@@ -23,7 +22,7 @@ def handler(event: dict, context: dict) -> None:
 
     :rtype: dict
     """
-    logger: logging.Logger = log('SECURITY GROUP UPDATES HANDLER')
+    logger: logging.Logger = log(__name__.upper())
     logger.info(f'EVENT: {event}')
     helper(event, context)
 
@@ -31,7 +30,7 @@ def handler(event: dict, context: dict) -> None:
 @helper.update
 @helper.create
 def create(event, context):
-    logger: logging.Logger = log('SECURITY GROUP UPDATES CREATE HANDLER')
+    logger: logging.Logger = log(__name__.upper())
     ec2 = boto3.resource('ec2')
     domain_sg = ec2.SecurityGroup(event['ResourceProperties']['DomainSecurityGroupId'])
 
@@ -50,14 +49,15 @@ def create(event, context):
                 }
             ],
         )
-        logger.info('Successfully created security group ingress rules for Firehose/ES Domain')
+        logger.info('Successfully created security group ingress rules for ES Domain')
     except ClientError as e:
         logger.info(e)
+        helper.init_failure(e)
 
 
 @helper.delete
 def delete(event, context):
-    logger: logging.Logger = log('SECURITY GROUP UPDATES DELETE HANDLER')
+    logger: logging.Logger = log(__name__.upper())
     ec2 = boto3.resource('ec2')
     domain_sg = ec2.SecurityGroup(event['ResourceProperties']['DomainSecurityGroupId'])
     try:
@@ -76,9 +76,10 @@ def delete(event, context):
             ],
         )
 
-        logger.info('Successfully deleted security group ingress rules for Firehose/ES Domain')
+        logger.info('Successfully deleted security group ingress rules for ES Domain')
     except ClientError as e:
         logger.error(e)
+        helper.init_failure(e)
 
 
 def log(name='aws_entity', logging_level=logging.INFO) -> logging.Logger:

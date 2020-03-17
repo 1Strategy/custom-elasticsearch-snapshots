@@ -1,5 +1,4 @@
-"""
-Elasticsearch Snapshot Lambda
+"""Elasticsearch Snapshot Lambda
 
 Executes Elasticsearch Domain Snapshots on customizable schedule, differing from the provided snapshots by AWS Elasticsearch Service
 """
@@ -23,37 +22,53 @@ def handler(event: dict, _) -> None:
 
     :rtype: None
     """
-    logger: logging.Logger = log('ELASTICSEARCH SNAPSHOT HANDLER')
+    logger: logging.Logger = log(__name__.upper())
     logger.info(f'EVENT: {event}')
 
-    repo_name: str = os.getenv('REPO_NAME')
-    es_host: str = os.getenv('ES_HOST')
+    snapshot_name: str = str(dt.utcnow()).replace(' ', '-').replace(':', '-').split('.')[0]
+    es: 'Elasticsearch' = get_es_connection()
+    logger.info(f'ES INSTANCE CONNECTION ACTIVE: {es.ping()}')
 
+    try:
+        response = es.snapshot.create(repository=os.getenv('REPO_NAME'), snapshot=snapshot_name)
+        logger.info(f'RESPONSE: {response}')
+    except (ConnectionError, ConnectionTimeout) as e:
+        logger.error(e)
+
+
+def get_signature() -> 'AWS4Auth':
+    """Construct an AWS4Auth object for use with STS temporary credentials. The `x-amz-security-token` header is added with the session token.
+
+    :rtype: 'AWS4Auth'
+    """
+    logger: logging.Logger = log(__name__.upper())
+    logger.info('Getting credentials')
     credentials = boto3.Session().get_credentials()
-    awsauth = AWS4Auth(
+
+    return AWS4Auth(
         credentials.access_key,
         credentials.secret_key,
         os.getenv('AWS_REGION'),
         'es',
         session_token=credentials.token
     )
-    snapshot_name: str = str(dt.utcnow()).replace(' ', '-').replace(':', '-').split('.')[0]
 
-    es = Elasticsearch(
-        hosts=['https://' + es_host],
-        http_auth=awsauth,
+
+def get_es_connection() -> 'Elasticsearch':
+    """Elasticsearch low-level client. Provides a straightforward mapping from Python to ES REST endpoints
+
+    :rtype: 'Elasticsearch'
+    """
+    logger: logging.Logger = log(__name__.upper())
+    logger.info('Getting Elasticsearch Connection')
+
+    return Elasticsearch(
+        hosts=['https://' + os.getenv('ES_HOST')],
+        http_auth=get_signature(),
         use_ssl=True,
         verify_certs=True,
         connection_class=RequestsHttpConnection
     )
-
-    logger.info(f'ES INSTANCE CONNECTION ACTIVE: {es.ping()}')
-
-    try:
-        response = es.snapshot.create(repository=repo_name, snapshot=snapshot_name)
-        logger.info(f'RESPONSE: {response}')
-    except (ConnectionError, ConnectionTimeout) as e:
-        logger.error(e)
 
 
 def log(name='aws_entity', logging_level=logging.INFO) -> logging.Logger:
