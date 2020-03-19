@@ -27,6 +27,7 @@ def handler(event: dict, context: dict) -> None:
     helper(event, context)
 
 
+@helper.update
 @helper.create
 def create(event: dict, _) -> None:
     """Adds necessary security group ingress from Lambda Functions to Elasticsearch Domain
@@ -62,22 +63,6 @@ def create(event: dict, _) -> None:
     except ClientError as e:
         logger.info(e)
         helper.init_failure(e)
-
-
-@helper.update
-def update(event: dict, _) -> None:
-    """Updates necessary security group ingress from Lambda Functions to Elasticsearch Domain
-
-    :type: dict
-    :param: event: aws cloudformation custom resource event
-
-    :type: dict
-    :param: _: (Unused) aws lambda function environment context
-
-    :rtype: None
-    """
-    logger: 'logging.Logger' = log(__name__.upper())
-    pass  # TODO
 
 
 @helper.delete

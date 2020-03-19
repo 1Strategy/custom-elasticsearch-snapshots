@@ -31,6 +31,7 @@ def handler(event: dict, context: dict) -> None:
     helper(event, context)
 
 
+@helper.update
 @helper.create
 def create(event: dict, _) -> None:
     """Adds required policy statements for Lambda function permissions to the Elasticsearch Domain Access policy
@@ -49,22 +50,6 @@ def create(event: dict, _) -> None:
     logger.info(f'Updating AccessPolicies: {config["DomainConfig"]["AccessPolicies"]["Options"]}')
 
     send_domain_config_updates(event, es, config)
-
-
-@helper.update
-def update(event: dict, _) -> None:
-    """Updates required policy statements for Lambda function permissions to the Elasticsearch Domain Access policy
-
-    :type: dict
-    :param: event: aws cloudformation custom resource event
-
-    :type: dict
-    :param: _: (Unused) aws lambda function environment context
-
-    :rtype: None
-    """
-    logger: 'logging.Logger' = log(__name__.upper())
-    pass  # TODO:
 
 
 @helper.delete
