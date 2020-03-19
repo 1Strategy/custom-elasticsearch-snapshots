@@ -22,15 +22,17 @@ def handler(event: dict, context: dict) -> None:
 
     :rtype: dict
     """
-    logger: logging.Logger = log(__name__.upper())
+    logger: 'logging.Logger' = log(__name__.upper())
     logger.info(f'EVENT: {event}')
     helper(event, context)
 
 
-@helper.update
+@helper.update  # TODO: Separate and handle these appropriately
 @helper.create
-def create(event, context):
-    logger: logging.Logger = log(__name__.upper())
+def create(event: dict, _) -> None:
+    """
+    """
+    logger: 'logging.Logger' = log(__name__.upper())
     ec2 = boto3.resource('ec2')
     domain_sg = ec2.SecurityGroup(event['ResourceProperties']['DomainSecurityGroupId'])
 
@@ -56,8 +58,10 @@ def create(event, context):
 
 
 @helper.delete
-def delete(event, context):
-    logger: logging.Logger = log(__name__.upper())
+def delete(event: dict, _) -> None:
+    """
+    """
+    logger: 'logging.Logger' = log(__name__.upper())
     ec2 = boto3.resource('ec2')
     domain_sg = ec2.SecurityGroup(event['ResourceProperties']['DomainSecurityGroupId'])
     try:
@@ -82,11 +86,11 @@ def delete(event, context):
         helper.init_failure(e)
 
 
-def log(name='aws_entity', logging_level=logging.INFO) -> logging.Logger:
+def log(name='aws_entity', logging_level=logging.INFO) -> 'logging.Logger':
     """Instantiate a logger
     """
 
-    logger: logging.Logger = logging.getLogger(name)
+    logger: 'logging.Logger' = logging.getLogger(name)
     if len(logger.handlers) < 1:
         log_handler: logging.StreamHandler = logging.StreamHandler()
         formatter: logging.Formatter = logging.Formatter('%(levelname)-8s %(asctime)s %(name)-12s %(message)s')

@@ -1,12 +1,12 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
-Description: ---  #TODO:
+Description: Custom Scheduled Elasticsearch Domain Snapshots
 Metadata:
   Authors:
     Description: Scott Schmidt (scott@1strategy.com)
 
     Purpose:
-      Description: This template is used to create a stack that implements an ---  # TODO:
+      Description: This template is used to create a stack that implements Elasticsearch Snapshots on a custom schedule, configurable for both Public and VPC Elasticsearch Domains
 
     License:
       Description: |
@@ -146,10 +146,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - Fn::If:
-          - UsesVpc
-          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
-          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
   UpdateDomainSecurityGroupFunctionRole:
     Type: AWS::IAM::Role
@@ -162,10 +159,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - Fn::If:
-          - UsesVpc
-          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
-          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
   CreateSnapshotRepoFunctionRole:
     Type: AWS::IAM::Role
@@ -227,27 +221,44 @@ Resources:
               - s3:DeleteObject
             Resource: !Sub "${ElasticsearchSnapshotBucket.Arn}/*"
 
-  UpdateDomainConfigFunctionsPolicy:
+  UpdateDomainAccessPolicyFunctionPolicy:
     Type: AWS::IAM::Policy
     Properties:
       Roles:
         - !Ref UpdateDomainAccessPolicyFunctionRole
-        - !If [UsesVpc, !Ref UpdateDomainSecurityGroupFunctionRole, !Ref "AWS::NoValue"]
       PolicyName: !Sub "${AWS::StackName}-elasticsearch-config-update-policy"
       PolicyDocument:
         Version: 2012-10-17
         Statement:
-          - Sid: EsDomainConfigPermissions
+          - Sid: EsDomainAccessPolicyPermissions
             Effect: Allow
             Action:
               - es:DescribeElasticsearchDomainConfig
               - es:UpdateElasticsearchDomainConfig
             Resource: !Sub "arn:${AWS::Partition}:es:${AWS::Region}:${AWS::AccountId}:domain/${DomainName}"
+
+  UpdateDomainSecurityGroupPolicy:
+    Type: AWS::IAM::Policy
+    Condition: UsesVpc
+    Properties:
+      Roles:
+        - !Ref UpdateDomainSecurityGroupFunctionRole
+      PolicyName: !Sub "${AWS::StackName}-elasticsearch-security-group-update-policy"
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
           - Sid: VpcSecurityGroupDescribePermissions
             Effect: Allow
             Action:
               - ec2:DescribeSecurityGroups
             Resource: "*"
+          - Sid: VpcSecurityGroupAuthorizeIngressPermissions
+            Effect: Allow
+            Action:
+              - ec2:AuthorizeSecurityGroupIngress
+              - ec2:RevokeSecurityGroupIngress
+            Resource: !Sub "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:security-group/${ElasticsearchDomainSecurityGroupId}"
+
 
   CreateSnapshotRepoFunctionPolicy:
     Type: AWS::IAM::Policy
@@ -332,24 +343,15 @@ Resources:
       RoleArns:
         - !GetAtt CreateSnapshotFunctionRole.Arn
         - !GetAtt CreateSnapshotRepoFunctionRole.Arn
-#      CreateSnapshotFunctionRoleArn: !GetAtt CreateSnapshotFunctionRole.A
-#      CreateSnapshotRepoFunctionRoleArn: !GetAtt CreateSnapshotRepoFunctionRole.Arn
 
   UpdateDomainAccessPolicyFunction:
     Type: AWS::Serverless::Function
-    DependsOn: UpdateDomainConfigFunctionsPolicy
+    DependsOn: UpdateDomainAccessPolicyFunctionPolicy
     Properties:
       Handler: "custom_resources/access_policy_updates/update_access_policy.handler"
       Runtime: python3.7
       Role: !GetAtt UpdateDomainAccessPolicyFunctionRole.Arn
       Timeout: 300
-      VpcConfig:
-        Fn::If:
-          - UsesVpc
-          - SecurityGroupIds:
-              - !Ref SnapshotFunctionSecurityGroup
-            SubnetIds: !Ref SubnetIds
-          - !Ref "AWS::NoValue"
       Layers:
         - !Ref FunctionDependencyLayer
 
@@ -358,6 +360,7 @@ Resources:
 #############################################
   UpdateDomainSecurityGroup:
     Condition: UsesVpc
+    DependsOn: UpdateDomainSecurityGroupPolicy
     Type: Custom::UpdateDomainSecurityGroup
     Properties:
       ServiceToken: !GetAtt UpdateDomainSecurityGroupFunction.Arn
@@ -368,14 +371,10 @@ Resources:
     Type: AWS::Serverless::Function
     Condition: UsesVpc
     Properties:
-      Handler: "custom_resources/security_group_updates/security_groups.py"
+      Handler: "custom_resources/security_group_updates/security_groups.handler"
       Runtime: python3.7
       Role: !GetAtt UpdateDomainSecurityGroupFunctionRole.Arn
       Timeout: 300
-      VpcConfig:
-        SecurityGroupIds:
-          - !Ref SnapshotFunctionSecurityGroup
-        SubnetIds: !Ref SubnetIds
       Layers:
         - !Ref FunctionDependencyLayer
 
@@ -415,45 +414,45 @@ Resources:
 #############################################
 # SCHEDULE & CREATE SNAPSHOTS
 #############################################
-#  ElasticsearchSnapshotFunction:
-#    Type: AWS::Serverless::Function
-#    DependsOn:
-#      - CreateSnapshotFunctionPolicy
-#      - CreateSnapshotRepo
-#    Properties:
-#      Handler: "functions/snapshot_function/es_snapshot.handler"
-#      Runtime: python3.7
-#      Role: !GetAtt CreateSnapshotFunctionRole.Arn
-#      Timeout: 900
-#      VpcConfig:
-#        Fn::If:
-#          - UsesVpc
-#          - SecurityGroupIds:
-#              - !Ref SnapshotFunctionSecurityGroup
-#            SubnetIds: !Ref SubnetIds
-#          - !Ref "AWS::NoValue"
-#      Layers:
-#        - !Ref FunctionDependencyLayer
-#      Environment:
-#        Variables:
-#          ES_HOST: !Ref ElasticsearchDomainUrl
-#          REPO_NAME: !Ref SnapshotRepoName
-#
-#  ElasticsearchSnapshotRule:
-#    Type: AWS::Events::Rule
-#    Properties:
-#      Description: Event Schedule for triggering frequest snapshots of Elasticsearch Domain
-#      ScheduleExpression: !Ref SnapshotScheduleExpression
-#      State: ENABLED
-#      Targets:
-#        - Arn: !GetAtt ElasticsearchSnapshotFunction.Arn
-#          Id: elasticsearch-snapshot-rule-target
-#
-#  ElasticsearchSnapshotRulePermissions:
-#    Type: AWS::Lambda::Permission
-#    Properties:
-#      FunctionName: !Ref ElasticsearchSnapshotFunction
-#      Action:  lambda:InvokeFunction
-#      Principal:  events.amazonaws.com
-#      SourceArn: !GetAtt ElasticsearchSnapshotRule.Arn
+  ElasticsearchSnapshotFunction:
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - CreateSnapshotFunctionPolicy
+      - CreateSnapshotRepo
+    Properties:
+      Handler: "functions/snapshot_function/es_snapshot.handler"
+      Runtime: python3.7
+      Role: !GetAtt CreateSnapshotFunctionRole.Arn
+      Timeout: 900
+      VpcConfig:
+        Fn::If:
+          - UsesVpc
+          - SecurityGroupIds:
+              - !Ref SnapshotFunctionSecurityGroup
+            SubnetIds: !Ref SubnetIds
+          - !Ref "AWS::NoValue"
+      Layers:
+        - !Ref FunctionDependencyLayer
+      Environment:
+        Variables:
+          ES_HOST: !Ref ElasticsearchDomainUrl
+          REPO_NAME: !Ref SnapshotRepoName
+
+  ElasticsearchSnapshotRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Event Schedule for triggering frequest snapshots of Elasticsearch Domain
+      ScheduleExpression: !Ref SnapshotScheduleExpression
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt ElasticsearchSnapshotFunction.Arn
+          Id: elasticsearch-snapshot-rule-target
+
+  ElasticsearchSnapshotRulePermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ElasticsearchSnapshotFunction
+      Action:  lambda:InvokeFunction
+      Principal:  events.amazonaws.com
+      SourceArn: !GetAtt ElasticsearchSnapshotRule.Arn
 
