@@ -1,6 +1,7 @@
 # Custom Scheduled Elasticsearch Domain Snapshots
 ---
-This template is used to create a stack that implements Elasticsearch Snapshots on a custom schedule, configurable for both Public and VPC Elasticsearch Domains
+This template is used to create a stack that implements Elasticsearch Snapshots on a custom schedule, configurable for both Public and VPC Elasticsearch Domains, and allows administrators more fine-grained control and visibility over snapshots.
+
 
 ### Public (Non-VPC) Elasticsearch Domains
 The following actions are taken on your domain when this template is deployed:
