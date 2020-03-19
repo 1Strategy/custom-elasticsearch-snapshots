@@ -24,7 +24,7 @@ def handler(event: dict, context: dict) -> None:
     :type: dict
     :param: context: aws lambda function environment context
 
-    :rtype: dict
+    :rtype: None
     """
     logger: 'logging.Logger' = log(__name__.upper())
     logger.info(f'EVENT: {event}')
@@ -34,7 +34,15 @@ def handler(event: dict, context: dict) -> None:
 # @helper.update  # TODO: Need to separate this to avoid duplicate policy statements
 @helper.create
 def create(event: dict, _) -> None:
-    """
+    """Adds required policy statements for Lambda function permissions to the Elasticsearch Domain Access policy
+
+    :type: dict
+    :param: event: aws cloudformation custom resource event
+
+    :type: dict
+    :param: _: (Unused) aws lambda function environment context
+
+    :rtype: None
     """
     logger: 'logging.Logger' = log(__name__.upper())
     config, policy = get_domain_config(event)
@@ -46,7 +54,15 @@ def create(event: dict, _) -> None:
 
 @helper.delete
 def delete(event: dict, _) -> None:
-    """
+    """Removes any policy statements for Lambda function permissions to the Elasticsearch Domain Access policy
+
+    :type: dict
+    :param: event: aws cloudformation custom resource event
+
+    :type: dict
+    :param: _: (Unused) aws lambda function environment context
+
+    :rtype: None
     """
     logger: 'logging.Logger' = log(__name__.upper())
     config, policy = get_domain_config(event)
@@ -57,7 +73,15 @@ def delete(event: dict, _) -> None:
 
 
 def update_policy_statements(event: dict, policy: dict) -> dict:
-    """
+    """Updates the provided Elasticsearch Domain policy document
+
+    :type: dict
+    :param: event: aws cloudformation custom resource event
+
+    :type: dict
+    :param: policy: contains the Elasticsearch Domain access policy document
+
+    :rtype: dict
     """
     logger: 'logging.Logger' = log(__name__.upper())
     account_id = event['ServiceToken'].split(':')[4]
@@ -80,7 +104,15 @@ def update_policy_statements(event: dict, policy: dict) -> dict:
 
 
 def remove_policy_statements(event: dict, policy: dict) -> dict:
-    """
+    """Removes any policy statements created by this project from the provided Elasticsearch Domain policy document
+
+    :type: dict
+    :param: event: aws cloudformation custom resource event
+
+    :type: dict
+    :param: policy: contains the Elasticsearch Domain access policy document
+
+    :rtype: dict
     """
     logger: 'logging.Logger' = log(__name__.upper())
 
@@ -94,7 +126,12 @@ def remove_policy_statements(event: dict, policy: dict) -> dict:
 
 
 def get_domain_config(event: dict) -> Tuple[dict, dict]:
-    """
+    """Retrieve the Elasticsearch Domain configuration and policy document
+
+    :type: dict
+    :param: event: aws cloudformation custom resource event
+
+    :rtype: Tuple[dict, dict]
     """
     logger: 'logging.Logger' = log(__name__.upper())
 
@@ -108,7 +145,18 @@ def get_domain_config(event: dict) -> Tuple[dict, dict]:
 
 
 def send_domain_config_updates(event: dict, es_conn, config: dict) -> None:
-    """
+    """Updates the Elasticsearch Domain configuration
+
+    :type: dict
+    :param: event: aws cloudformation custom resource event
+
+    :type: dict
+    :param: es_conn: Boto3 Elasticsearch client
+
+    :type: dict
+    :param: config: Complete Elasticsearch Domain configuration
+
+    :rtype: None
     """
     logger: 'logging.Logger' = log(__name__.upper())
 
