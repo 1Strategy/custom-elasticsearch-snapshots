@@ -141,8 +141,16 @@ def get_es_connection(event: dict) -> 'Elasticsearch':
     )
 
 
-def create_repository(event: dict, es_conn) -> None:
-    """
+def create_repository(event: dict, es_conn: 'Elasticsearch') -> None:
+    """Creates an Elasticsearch Snapshot Repository, backed by S3
+
+    :type: dict
+    :param: event: aws cloudformation custom resource event
+
+    :type: object
+    :param: es_conn: elasticsearch connection object
+
+    :rtype: None
     """
     logger: logging.Logger = log(__name__.upper())
 
