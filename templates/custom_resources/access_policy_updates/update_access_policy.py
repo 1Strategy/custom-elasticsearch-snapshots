@@ -31,7 +31,6 @@ def handler(event: dict, context: dict) -> None:
     helper(event, context)
 
 
-# @helper.update  # TODO: Need to separate this to avoid duplicate policy statements
 @helper.create
 def create(event: dict, _) -> None:
     """Adds required policy statements for Lambda function permissions to the Elasticsearch Domain Access policy
@@ -50,6 +49,14 @@ def create(event: dict, _) -> None:
     logger.info(f'Updating AccessPolicies: {config["DomainConfig"]["AccessPolicies"]["Options"]}')
 
     send_domain_config_updates(event, es, config)
+
+
+@helper.update
+def update(event: dict, _) -> None:
+    """
+    """
+    logger: 'logging.Logger' = log(__name__.upper())
+    pass  # TODO:
 
 
 @helper.delete

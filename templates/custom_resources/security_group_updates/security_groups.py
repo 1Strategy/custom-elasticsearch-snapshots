@@ -20,14 +20,13 @@ def handler(event: dict, context: dict) -> None:
     :type: dict
     :param: context: aws lambda function environment context
 
-    :rtype: dict
+    :rtype: None
     """
     logger: 'logging.Logger' = log(__name__.upper())
     logger.info(f'EVENT: {event}')
     helper(event, context)
 
 
-@helper.update  # TODO: Separate and handle these appropriately
 @helper.create
 def create(event: dict, _) -> None:
     """
@@ -55,6 +54,14 @@ def create(event: dict, _) -> None:
     except ClientError as e:
         logger.info(e)
         helper.init_failure(e)
+
+
+@helper.update
+def update(event: dict, _) -> None:
+    """
+    """
+    logger: 'logging.Logger' = log(__name__.upper())
+    pass  # TODO
 
 
 @helper.delete
