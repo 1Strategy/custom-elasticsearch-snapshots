@@ -29,7 +29,15 @@ def handler(event: dict, context: dict) -> None:
 
 @helper.create
 def create(event: dict, _) -> None:
-    """
+    """Adds necessary security group ingress from Lambda Functions to Elasticsearch Domain
+
+    :type: dict
+    :param: event: aws cloudformation custom resource event
+
+    :type: dict
+    :param: _: (Unused) aws lambda function environment context
+
+    :rtype: None
     """
     logger: 'logging.Logger' = log(__name__.upper())
     ec2 = boto3.resource('ec2')
@@ -58,7 +66,15 @@ def create(event: dict, _) -> None:
 
 @helper.update
 def update(event: dict, _) -> None:
-    """
+    """Updates necessary security group ingress from Lambda Functions to Elasticsearch Domain
+
+    :type: dict
+    :param: event: aws cloudformation custom resource event
+
+    :type: dict
+    :param: _: (Unused) aws lambda function environment context
+
+    :rtype: None
     """
     logger: 'logging.Logger' = log(__name__.upper())
     pass  # TODO
@@ -66,7 +82,15 @@ def update(event: dict, _) -> None:
 
 @helper.delete
 def delete(event: dict, _) -> None:
-    """
+    """Removes unnecessary security group ingress from Lambda Functions to Elasticsearch Domain
+
+    :type: dict
+    :param: event: aws cloudformation custom resource event
+
+    :type: dict
+    :param: _: (Unused) aws lambda function environment context
+
+    :rtype: None
     """
     logger: 'logging.Logger' = log(__name__.upper())
     ec2 = boto3.resource('ec2')
