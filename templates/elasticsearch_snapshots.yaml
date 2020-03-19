@@ -28,38 +28,38 @@ Metadata:
       ParameterGroups:
         -
           Label:
-            default: Kinesis VPC Endpoint
+            default: VPC Config
           Parameters:
             - VpcId
             - SubnetIds
+            - ElasticsearchDomainSecurityGroupId
         -
           Label:
             default: Elasticsearch Cluster
           Parameters:
+            - IsElasticsearchInVpc
             - DomainName
             - SnapshotRepoName
-            - SnapshotScheduleExpression
             - ElasticsearchDomainUrl
-            - ElasticsearchDomainSecurityGroupId
-            - ElasticsearchDomainArn
+            - SnapshotScheduleExpression
 
       ParameterLabels:
         VpcId:
-          default: Kinesis Endpoint VPC ID
+          default: Elasticsearch VPC ID
         SubnetIds:
-          default: VPC Endpoint Subnet IDs
-        DomainName:
-          default: Elasticsearch Domain Name
-        SnapshotRepoName:
-          default: Domain Snapshot Repository Name
-        SnapshotScheduleExpression:
-          default: Domain Snapshot Schedule Expression
-        ElasticsearchDomainUrl:
-          default: SSM Parameter Name - Domain URL
+          default: Elasticsearch Subnet IDs
         ElasticsearchDomainSecurityGroupId:
-          default: SSM Parameter Name - Domain Security Group ID
-        ElasticsearchDomainArn:
-          default: Elasticsearch ARN Parameter Store Name
+          default: Elasticsearch Domain Security Group Id
+        IsElasticsearchInVpc:
+          default: Is the Elasticsearch Domain in a VPC?
+        DomainName:
+          default: Elasticsearch Domain name
+        SnapshotRepoName:
+          default: Snapshot Repository name
+        ElasticsearchDomainUrl:
+          default: Elasticsearch Domain Endpoint
+        SnapshotScheduleExpression:
+          default: CloudWatch Schedule Expression
 
 
 ##########################################################################################
