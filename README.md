@@ -18,6 +18,9 @@ The following actions are taken on your domain when this template is deployed:
 1. Access policies are updated to allow least privileged access to the Lambda functions that will:
     1. Create a Snapshot Repository (one time)
     1. Create incremental snapshots at the specified intervals (See [Parameters](#parameters-span-idparametersspan))
+1. Elasticsearch Domain Security Group is updated to allow ingress from the Security Group attached to the Lambda functions that will:
+    1. Create a Snapshot Repository (one time)
+    1. Create incremental snapshots at the specified intervals
 1. A new Snapshot Repository is created and associated with a new S3 bucket
     - _Please update the template with any access/control policies that you require on buckets. It is currently a generic bucket with very few security measures in place._
 1. A CloudWatch Event Rule is set up on your desired interval which triggers a Lambda function to create new Elasticsearch Snapshots, which are then located in the above-mentioned bucket/snapshot repository.
