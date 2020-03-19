@@ -53,7 +53,7 @@ This project utilizes the [Python Elasticsearch Client](https://elasticsearch-py
 
 <br /><br />
 
-## Deploying the Templates via AWS CLI for the first time
+## Deploying the Templates via AWS CLI
 ---
 
 ### Parameters <span id="parameters"></span>
