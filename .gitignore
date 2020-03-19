@@ -3,9 +3,10 @@
 deploy/*
 deploy/!.gitkeep
 parameters/us-west-2/*
-parameters/us-west-2/!.gitkeep
+!parameters/.gitkeep
+!parameters/us-west-2/.gitkeep
 tags/*
-tags/!.gitkeep
+!tags/.gitkeep
 templates/functions/function_dependencies/http_requests/python/*
 deploy.sh
 .idea/
