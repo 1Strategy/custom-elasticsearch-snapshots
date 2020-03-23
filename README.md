@@ -57,6 +57,9 @@ This project utilizes the [Python Elasticsearch Client](https://elasticsearch-py
 ## Deploying the Templates via AWS CLI
 ---
 
+### Deployment flowchart
+![deployment flowchart](./images/flowchart-custom-snapshots.png)
+
 ### Parameters <span id="parameters"></span>
 Create a `parameters.json` file as seen in the directory tree below. Ensure that you update the directory paths for your region of choice, and place you file in the appropriate directory.
 
