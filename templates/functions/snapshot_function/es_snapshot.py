@@ -24,13 +24,18 @@ def handler(event: dict, _) -> None:
     """
     logger: logging.Logger = log(__name__.upper())
     logger.info(f'EVENT: {event}')
+    dt_now = dt.now()
 
-    snapshot_name: str = str(dt.utcnow()).replace(' ', '-').replace(':', '-').split('.')[0]
+    snapshot_file_name: str = f'{dt_now.year}-{dt_now.month}-{dt_now.day}-{dt_now.hour}-{dt_now.minute}-{dt_now.second}'
+
     es: 'Elasticsearch' = get_es_connection()
     logger.info(f'ES INSTANCE CONNECTION ACTIVE: {es.ping()}')
 
     try:
-        response = es.snapshot.create(repository=os.getenv('REPO_NAME'), snapshot=snapshot_name)
+        response = es.snapshot.create(
+            repository=os.getenv('REPO_NAME'),
+            snapshot=snapshot_file_name
+        )
         logger.info(f'RESPONSE: {response}')
     except (ConnectionError, ConnectionTimeout) as e:
         logger.error(e)

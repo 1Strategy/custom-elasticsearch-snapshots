@@ -305,7 +305,11 @@ Resources:
     Type: AWS::S3::Bucket  # TODO: Update the bucket props (Access and Lifecycle policies)
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
-    # Properties:
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 4
+            Status: Enabled
 
 #############################################
 # SNAPSHOT SECURITY GROUP (VPC ONLY)
